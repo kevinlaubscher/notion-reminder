@@ -1,11 +1,11 @@
-import os, requests
+import os, requests, json
 from datetime import date
 
 NOTION_TOKEN = os.environ["NOTION_TOKEN"]
-DATABASE_ID = os.environ["DATABASE_ID"]
+DATABASE_ID  = os.environ["DATABASE_ID"]
 PUSHOVER_TOKEN = os.environ["PUSHOVER_TOKEN"]
-PUSHOVER_USER = os.environ["PUSHOVER_USER"]
-MODE = os.environ.get("MODE", "morning")  # "morning" oder "evening"
+PUSHOVER_USER  = os.environ["PUSHOVER_USER"]
+MODE = os.environ.get("MODE", "morning")
 
 today = date.today().isoformat()
 
@@ -15,19 +15,30 @@ headers = {
     "Content-Type": "application/json"
 }
 
-# --- MORGENS: alle To-Dos mit Datum = heute ---
-# --- ABENDS:  nur To-Dos mit Datum = heute UND Checkbox = false ---
+# TEMPORÄR: Alle Einträge ohne Filter abrufen um Property-Namen zu sehen
+res_debug = requests.post(
+    f"https://api.notion.com/v1/databases/{DATABASE_ID}/query",
+    headers=headers,
+    json={}
+)
+all_pages = res_debug.json().get("results", [])
+if all_pages:
+    print("=== PROPERTY NAMEN ===")
+    print(json.dumps(list(all_pages[0]["properties"].keys()), indent=2))
+    print("======================")
+else:
+    print("Datenbank ist leer oder kein Zugriff!")
 
 filter_conditions = [
     {
-        "property": "Erledigen am:",  # <-- ggf. exakten Property-Namen anpassen
+        "property": "Erledigen am:",
         "date": {"equals": today}
     }
 ]
 
 if MODE == "evening":
     filter_conditions.append({
-        "property": "Kontrollkästchen",  # <-- ggf. anpassen
+        "property": "Kontrollkästchen",
         "checkbox": {"equals": False}
     })
 
@@ -39,12 +50,10 @@ res = requests.post(
 
 todos = res.json().get("results", [])
 
-# --- ABENDS: nur senden wenn wirklich noch was offen ist ---
 if MODE == "evening" and not todos:
     print("Alles erledigt – keine Notification nötig.")
     exit()
 
-# Aufgaben-Namen extrahieren
 items = []
 for page in todos:
     try:
@@ -64,10 +73,9 @@ if MODE == "morning":
 else:
     title = f"🌙 Noch {len(items)} nicht erledigt"
     msg   = "\n".join(f"• {i}" for i in items)
-    priority = -1   # leise abends
+    priority = -1
     sound    = "none"
 
-# Pushover senden
 r = requests.post(
     "https://api.pushover.net/1/messages.json",
     data={
