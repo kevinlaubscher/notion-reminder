@@ -20,7 +20,7 @@ headers = {
 
 filter_conditions = [
     {
-        "property": "Erledigen bis",  # <-- ggf. exakten Property-Namen anpassen
+        "property": "Erledigen am:",  # <-- ggf. exakten Property-Namen anpassen
         "date": {"equals": today}
     }
 ]
