@@ -1,4 +1,4 @@
-import os, requests, json
+import os, requests
 from datetime import date
 
 NOTION_TOKEN = os.environ["NOTION_TOKEN"]
@@ -14,20 +14,6 @@ headers = {
     "Notion-Version": "2022-06-28",
     "Content-Type": "application/json"
 }
-
-# TEMPORÄR: Alle Einträge ohne Filter abrufen um Property-Namen zu sehen
-res_debug = requests.post(
-    f"https://api.notion.com/v1/databases/{DATABASE_ID}/query",
-    headers=headers,
-    json={}
-)
-all_pages = res_debug.json().get("results", [])
-if all_pages:
-    print("=== PROPERTY NAMEN ===")
-    print(json.dumps(list(all_pages[0]["properties"].keys()), indent=2))
-    print("======================")
-else:
-    print("Datenbank ist leer oder kein Zugriff!")
 
 filter_conditions = [
     {
